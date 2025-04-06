@@ -200,22 +200,22 @@ document.addEventListener("DOMContentLoaded", function() {
     switchPage("poolPage");
   }
   
-  function updateMatchScore(id, delta) {
-    let elem = document.getElementById(id);
-    let val = parseInt(elem.textContent) || 0;
-    elem.textContent = Math.max(0, val + delta);
-    if (currentMatchData && currentMatchData.tieBreakActive) {
-      if (parseInt(elem.textContent) > 0) {
-        clearInterval(tieBreakInterval);
-        if (id === "matchScore1") {
-          document.getElementById("matchScore2").textContent = "0";
-        } else {
-          document.getElementById("matchScore1").textContent = "0";
-        }
-        finishMatch();
+ function updateMatchScore(id, delta) {
+  let elem = document.getElementById(id);
+  let val = parseInt(elem.value) || 0;
+  elem.value = Math.max(0, val + delta);
+  if (currentMatchData && currentMatchData.tieBreakActive) {
+    if (parseInt(elem.value) > 0) {
+      clearInterval(tieBreakInterval);
+      if (id === "matchScore1") {
+        document.getElementById("matchScore2").value = "0";
+      } else {
+        document.getElementById("matchScore1").value = "0";
       }
+      finishMatch();
     }
   }
+}
   
   let timerInterval = null;
   let totalMatchTime = 180;
@@ -526,6 +526,8 @@ document.addEventListener("DOMContentLoaded", function() {
         DQ: isDQ,
         poolID: poolID
       });
+      globalPoolPlayers = allPlayers;
+
     });
   }
   
@@ -630,41 +632,124 @@ document.addEventListener("DOMContentLoaded", function() {
 }
 
   // ================= Final Results =================
-  function generateFinalResults() {
-    if (!knockoutBracket || !knockoutBracket.rounds || qualifiedPlayersForKnockout.length === 0) {
-      alert("尚未有淘汰賽資料！");
-      return;
+function generateFinalResults() {
+  // 檢查必需資料是否存在
+  if (!globalPoolPlayers || globalPoolPlayers.length === 0) {
+    alert("尚未有 Pool 賽資料！");
+    return;
+  }
+  if (!knockoutBracket || !knockoutBracket.rounds) {
+    alert("尚未有淘汰賽資料！");
+    return;
+  }
+  
+  // 假設 globalPoolPlayers 依 pool 賽表現排序（種子排名），
+  // 並且 calculatePoolResults() 已執行後將所有選手存入 globalPoolPlayers。
+  
+  // Group A：淘汰賽進入者（qualified 且非 DQ）
+  let groupA = globalPoolPlayers.filter(p => p.qualified && !p.DQ);
+  // Group B：Pool 賽中未晉級（非 qualified 且非 DQ）
+  let groupB = globalPoolPlayers.filter(p => !p.qualified && !p.DQ);
+  // Group D：被 DQ 的選手
+  let groupD = globalPoolPlayers.filter(p => p.DQ);
+  
+  // 為淘汰賽進入者 groupA 內的每位選手，假設您在淘汰賽進行中已為其設定 eliminationRound 屬性，
+  // 若沒有設定，則預設他們的 eliminationRound為 0（表示未參加淘汰賽）
+  // 例如，冠軍的 eliminationRound 應設為 knockoutRounds + 1，
+  // 決賽敗者 eliminationRound = knockoutRounds，
+  // 半決賽敗者 eliminationRound = knockoutRounds - 1，依此類推。
+  let totalRounds = knockoutBracket.rounds.length; // 淘汰賽總輪數
+  
+  // 將 groupA 按照淘汰賽結果來區分：
+  // top4：淘汰賽進入者中，若 eliminationRound >= (totalRounds - 1)（即進入半決賽及以上）
+  let groupA_top4 = groupA.filter(p => (p.eliminationRound !== undefined && p.eliminationRound >= totalRounds - 1));
+  // 依 eliminationRound 降序排序；如相同，則依 pool 賽種子 (即在 globalPoolPlayers 中的索引) 升序排序
+  groupA_top4.sort((a, b) => {
+    if (b.eliminationRound !== a.eliminationRound) {
+      return b.eliminationRound - a.eliminationRound;
+    } else {
+      let aSeed = globalPoolPlayers.findIndex(x => x.name === a.name);
+      let bSeed = globalPoolPlayers.findIndex(x => x.name === b.name);
+      return aSeed - bSeed;
     }
-    // 此處僅簡單示範，實際可根據需求進行排序
-    let finalRanking = qualifiedPlayersForKnockout.filter(p => p.qualified && p.name !== "BYE" && !p.DQ);
-    let container = document.getElementById("finalResultsContainer");
-    container.innerHTML = "";
-    let finalTitle = document.getElementById("finalTitle");
-    finalTitle.innerHTML = "<h2>【" + globalTournamentName + "】 最終成績</h2>";
-    let table = document.createElement("table");
-    let thead = document.createElement("thead");
-    thead.innerHTML = `<tr>
+  });
+  // 只取前四名，如果不足四則全部取出
+  groupA_top4 = groupA_top4.slice(0, 4);
+  
+  // 其餘淘汰賽進入者（Group A 但不在 top4），依 pool 賽種子排序
+  let groupA_rest = groupA.filter(p => !groupA_top4.some(q => q.name === p.name));
+  groupA_rest.sort((a, b) => {
+    let aSeed = globalPoolPlayers.findIndex(x => x.name === a.name);
+    let bSeed = globalPoolPlayers.findIndex(x => x.name === b.name);
+    return aSeed - bSeed;
+  });
+  
+  // 最終淘汰賽進入者排名
+  let knockoutFinalRanking = groupA_top4.concat(groupA_rest);
+  
+  // 非淘汰賽進入者（Group B）依 pool 賽種子排序
+  groupB.sort((a, b) => {
+    let aSeed = globalPoolPlayers.findIndex(x => x.name === a.name);
+    let bSeed = globalPoolPlayers.findIndex(x => x.name === b.name);
+    return aSeed - bSeed;
+  });
+  
+  // 被 DQ 選手（Group D）依 pool 賽種子排序
+  groupD.sort((a, b) => {
+    let aSeed = globalPoolPlayers.findIndex(x => x.name === a.name);
+    let bSeed = globalPoolPlayers.findIndex(x => x.name === b.name);
+    return aSeed - bSeed;
+  });
+  
+  // 最終排名依序為：淘汰賽進入者 (knockoutFinalRanking) + 未晉級者 (groupB) + 被 DQ 選手 (groupD)
+  let finalRanking = knockoutFinalRanking.concat(groupB, groupD);
+  
+  // 生成最終成績表
+  let container = document.getElementById("finalResultsContainer");
+  container.innerHTML = "";
+  let finalTitle = document.getElementById("finalTitle");
+  finalTitle.innerHTML = "<h2>【" + globalTournamentName + "】 最終成績</h2>";
+  
+  let table = document.createElement("table");
+  let thead = document.createElement("thead");
+  thead.innerHTML = `<tr>
       <th>Rank</th>
       <th>選手名稱</th>
     </tr>`;
-    table.appendChild(thead);
-    let tbody = document.createElement("tbody");
-    finalRanking.forEach((player, index) => {
-      let tr = document.createElement("tr");
-      let bg;
-      if (index === 0) bg = "#ffd700";
-      else if (index === 1) bg = "#c0c0c0";
-      else if (index === 2 || index === 3) bg = "#cd7f32";
-      else bg = "#d4edda";
-      tr.innerHTML = `<td>${index + 1}</td><td>${player.name}</td>`;
-      tr.style.backgroundColor = bg;
-      tbody.appendChild(tr);
-    });
-    table.appendChild(tbody);
-    container.appendChild(table);
-    switchPage("finalResultsPage");
-  }
+  table.appendChild(thead);
+  let tbody = document.createElement("tbody");
   
+  finalRanking.forEach((player, index) => {
+    let tr = document.createElement("tr");
+    // 如果玩家被DQ，Rank顯示 "DQ"，否則顯示他在最終排名中的序號（1 起算）
+    let rankText = player.DQ ? "DQ" : (index + 1);
+    
+    // 背景顏色：前四強特別標示（金、銀、銅色），淘汰賽進入者其餘用淺綠，未晉級用淺藍，被DQ用紅色
+    let bg;
+    if (player.DQ) {
+      bg = "#ffcccc";
+    } else if (knockoutFinalRanking.some(p2 => p2.name === player.name)) {
+      // 此玩家進入淘汰賽
+      if (index === 0) bg = "#ffd700";      // 冠軍（金色）
+      else if (index === 1) bg = "#c0c0c0";   // 亞軍（銀色）
+      else if (index === 2 || index === 3) bg = "#cd7f32";  // 季軍（銅色）
+      else bg = "#d4edda";  // 其他淘汰賽進入者
+    } else {
+      // 未晉級者
+      bg = "#d0e7ff";
+    }
+    
+    tr.innerHTML = `<td>${rankText}</td><td>${player.name}</td>`;
+    tr.style.backgroundColor = bg;
+    tbody.appendChild(tr);
+  });
+  
+  table.appendChild(tbody);
+  container.appendChild(table);
+  
+  switchPage("finalResultsPage");
+}
+
   function downloadFinalResults() {
     let table = document.getElementById("finalResultsContainer").querySelector("table");
     if (!table) return;
@@ -805,7 +890,7 @@ document.addEventListener("DOMContentLoaded", function() {
     switchPage("matchPage");
   }
   
- // 用於重置對決區標題為「對決」
+ // 重置對決區標題
 function resetMatchHeader() {
   let header = document.getElementById("matchSection").querySelector("h2");
   if (header) {
@@ -875,7 +960,7 @@ function finishKnockoutMatch() {
   }
 }
 
-// finishMatch 用於 Pool 賽及淘汰賽對決結束後呼叫
+// 結束對決，讀取 input 分數
 function finishMatch() {
   if (currentMatchData && currentMatchData.hasOwnProperty("knockoutRound")) {
     finishKnockoutMatch();
@@ -887,12 +972,12 @@ function finishMatch() {
         `tr[data-index='${currentMatchData.col}'] td.match-cell[data-col='${currentMatchData.row}']`
       );
       if (otherCell) otherCell.innerHTML = "DQ";
-      resetMatchHeader(); // 重置標題
+      resetMatchHeader();
       switchPage("poolPage");
       return;
     }
-    let s1 = parseInt(document.getElementById("matchScore1").textContent) || 0;
-    let s2 = parseInt(document.getElementById("matchScore2").textContent) || 0;
+    let s1 = parseInt(document.getElementById("matchScore1").value) || 0;
+    let s2 = parseInt(document.getElementById("matchScore2").value) || 0;
     if (s1 === s2) {
       startTieBreak();
       return;
@@ -905,14 +990,7 @@ function finishMatch() {
       resultLeft = `<span class="pool-loss">D${s1}</span>`;
       resultRight = `<span class="pool-win">V${s2}</span>`;
     }
-    if (leftCard !== "none") {
-      let iconLeft = leftCard === "yellow" ? "🟨" : (leftCard === "red" ? "🟥" : (leftCard === "black" ? "⚫" : ""));
-      resultLeft += " " + iconLeft;
-    }
-    if (rightCard !== "none") {
-      let iconRight = rightCard === "yellow" ? "🟨" : (rightCard === "red" ? "🟥" : (rightCard === "black" ? "⚫" : ""));
-      resultRight += " " + iconRight;
-    }
+    // 可根據需要加入牌面圖示，此處省略
     if (currentMatchData && currentMatchData.cell) {
       currentMatchData.cell.innerHTML = resultLeft;
     }
@@ -924,7 +1002,6 @@ function finishMatch() {
     recalcPoolStats(currentMatchData.poolID, currentMatchData.row);
     recalcPoolStats(currentMatchData.poolID, currentMatchData.col);
     recalcPoolRanking(currentMatchData.poolID);
-    // 重置 Tie-Break 提示及標題
     resetMatchHeader();
     document.getElementById("tieBreakStartContainer").style.display = "none";
     remainingTime = totalMatchTime;
@@ -1052,6 +1129,7 @@ function resetAllData() {
       // 變下箭頭符號
       this.innerHTML = "&#9660;";
     }
+    
   });
 
   // ================= 全域暴露 =================

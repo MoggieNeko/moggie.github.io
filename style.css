@@ -41,8 +41,8 @@ header {
   color: #fff;
 }
 .logo {
-  width: 60px;
-  margin-bottom: 5px;
+  width: 200px;
+  margin-bottom: -10px;
 }
 header h1 {
   font-size: 1.6em;
@@ -387,4 +387,13 @@ header h1 {
 }
 .nav-btn:hover {
   background: #a31515;
+}
+/* 針對對決頁面中比分輸入欄的樣式 */
+.score-display[type="number"] {
+  width: 240px;       /* 調整欄位寬度 */
+  height: 40px;      /* 調整欄位高度 */
+  text-align: center;/* 文字置中 */
+  font-size: 1.2em;  /* 字體大小 */
+  margin: 0 5px;     /* 與左右元素留一點間距 */
+  box-sizing: border-box;
 }
