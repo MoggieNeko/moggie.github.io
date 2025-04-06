@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>劍擊賽 App</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- 頁首 -->
+  <header>
+    <img src="images/EAF_logo.png" alt="EAF Logo" class="logo">
+    <h1>劍擊賽 App</h1>
+  </header>
+
+  <!-- 分頁容器 -->
+  <div id="pageContainer">
+    <!-- 首頁：全局設定 -->
+    <section id="homePage" class="page active">
+      <div class="home-content">
+        <h2>歡迎使用劍擊賽 App</h2>
+        <p>請輸入賽事資訊並設定全場晉級條件，然後開始 Pool 賽！</p>
+        <div class="home-inputs">
+          <label>賽事名稱:</label>
+          <input type="text" id="globalTournamentName" placeholder="請輸入賽事名稱">
+          <label>Pool 總數:</label>
+          <input type="number" id="globalPoolTotal" value="2" min="1" max="10">
+          <label>全場晉級設定:</label>
+          <select id="globalQualType">
+            <option value="fixed" selected>固定人數</option>
+            <option value="ratio">比例 (%)</option>
+          </select>
+          <input type="number" id="globalQualValue" value="30" min="1" style="width:60px;">
+          <button class="btn" onclick="startPoolTournament()">生成 Pool 賽</button>
+        </div>
+      </div>
+    </section>
+    <!-- Pool 賽頁面 -->
+    <section id="poolPage" class="page" style="display:none;">
+      <h2 id="poolEventName"></h2>
+      <!-- Pool 分頁按鈕 -->
+      <div id="poolTabs" class="pool-tabs"></div>
+      <!-- 各 Pool 內容 -->
+      <div id="poolContents"></div>
+      <button class="btn" onclick="calculatePoolResults()">完成 Pool 賽，計算晉級</button>
+    </section>
+
+    <!-- Overall Seeding & Results 頁面 -->
+    <section id="seedingPage" class="page" style="display:none;">
+      <div id="seedingResultsSection">
+        <h2>Overall Seeding &amp; Results</h2>
+        <!-- 正常選手表格 -->
+        <div id="normalResultsContainer"></div>
+        <!-- 被 DQ 選手表格 -->
+        <div id="dqResultsContainer"></div>
+        <button class="btn" onclick="generateKnockoutBracket()">進入淘汰賽</button>
+      </div>
+    </section>
+
+    <!-- 淘汰賽對陣表 頁面 -->
+    <section id="knockoutPage" class="page" style="display:none;">
+      <div id="tablesSection">
+        <h2>淘汰賽對陣表</h2>
+        <div id="bracketContainer"></div>
+      </div>
+    </section>
+
+    <!-- Final Results (最終成績) 頁面 -->
+    <section id="finalResultsPage" class="page" style="display:none;">
+      <div id="finalResultsSection">
+        <div id="finalTitle"></div>
+        <div id="finalResultsContainer"></div>
+        <button class="btn" onclick="downloadFinalResults()">下載最終成績表</button>
+        <div class="final-btns">
+          <button class="btn" onclick="viewKnockoutBracket()">查看淘汰賽對陣表</button>
+          <button class="btn" onclick="restartNewMatch()">重新開始新比賽</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 單挑比賽 (對決) 頁面 -->
+    <section id="matchPage" class="page" style="display:none;">
+      <div id="matchSection">
+        <h2>對決</h2>
+        <div class="match-info">
+          <div class="match-players">
+            <div class="match-player">
+              <h3 id="matchPlayer1Name">選手1</h3>
+              <div id="matchScore1" class="score-display">0</div>
+              <div class="score-controls">
+                <button class="btn" onclick="updateMatchScore('matchScore1', 1)">+1</button>
+                <button class="btn btn-danger" onclick="updateMatchScore('matchScore1', -1)">-1</button>
+              </div>
+            </div>
+            <div class="match-player">
+              <h3 id="matchPlayer2Name">選手2</h3>
+              <div id="matchScore2" class="score-display">0</div>
+              <div class="score-controls">
+                <button class="btn" onclick="updateMatchScore('matchScore2', 1)">+1</button>
+                <button class="btn btn-danger" onclick="updateMatchScore('matchScore2', -1)">-1</button>
+              </div>
+            </div>
+          </div>
+          <div class="custom-time">
+            <label>比賽時間:</label>
+            <select id="matchTimeSelect" onchange="changeMatchTime(this)">
+              <option value="60">01:00</option>
+              <option value="180" selected>03:00</option>
+              <option value="300">05:00</option>
+            </select>
+          </div>
+          <div class="match-timer">
+            <h3>比賽倒計時 (MM:SS)</h3>
+            <div id="timerDisplay" class="score-display">03:00</div>
+            <div class="timer-controls">
+              <button class="btn" onclick="startTimer()">開始</button>
+              <button class="btn btn-danger" onclick="stopTimer()">暫停</button>
+              <button class="btn" onclick="resetTimer()">重設</button>
+            </div>
+          </div>
+          <!-- 裁判發牌區 -->
+          <div class="card-controls">
+            <button class="btn" onclick="resetCardSelection()">重置發牌</button>
+          </div>
+          <div class="card-section">
+            <div class="card-group left-group">
+              <h3>左方發牌</h3>
+              <div class="card-buttons">
+                <button class="card-btn none" onclick="selectCard('left','none')">無牌</button>
+                <button class="card-btn yellow" onclick="selectCard('left','yellow')">黃牌</button>
+                <button class="card-btn red" onclick="selectCard('left','red')">紅牌</button>
+                <button class="card-btn black" onclick="selectCard('left','black')">黑牌</button>
+              </div>
+              <div class="card-display" id="cardDisplayLeft">目前牌：無牌</div>
+            </div>
+            <div class="card-group right-group">
+              <h3>右方發牌</h3>
+              <div class="card-buttons">
+                <button class="card-btn none" onclick="selectCard('right','none')">無牌</button>
+                <button class="card-btn yellow" onclick="selectCard('right','yellow')">黃牌</button>
+                <button class="card-btn red" onclick="selectCard('right','red')">紅牌</button>
+                <button class="card-btn black" onclick="selectCard('right','black')">黑牌</button>
+              </div>
+              <div class="card-display" id="cardDisplayRight">目前牌：無牌</div>
+            </div>
+          </div>
+          <!-- Tie-Break 按鈕（預設隱藏） -->
+          <div id="tieBreakStartContainer" style="display:none; text-align:center; margin-top:10px;">
+            <button class="btn" onclick="startTieBreakTimer()">開始 Tie-Break</button>
+          </div>
+        </div>
+        <div class="match-submit">
+          <button class="btn" onclick="finishMatch()">送出比賽結果</button>
+          <button class="btn" onclick="backToPool()">返回 Pool 賽</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- 底部導航：上拉式 -->
+  <nav id="bottomNav" class="closed">
+    <!-- 箭頭放在導航裡面，但用絕對定位頂部中央 -->
+    <div id="navArrow" class="nav-arrow">&#9650;</div>
+    
+    <!-- 導航按鈕 -->
+    <button class="nav-btn" onclick="switchPage('homePage')">首頁</button>
+    <button class="nav-btn" onclick="switchPage('poolPage')">Pool 賽</button>
+    <button class="nav-btn" onclick="switchPage('seedingPage')">排名</button>
+    <button class="nav-btn" onclick="switchPage('knockoutPage')">淘汰賽</button>
+    <button class="nav-btn" onclick="switchPage('finalResultsPage')">最終成績</button>
+    <button class="nav-btn" onclick="switchPage('matchPage')">對決</button>
+  </nav>
+
+  <script src="script.js"></script>
+</body>
+</html>

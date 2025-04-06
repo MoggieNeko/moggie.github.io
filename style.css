@@ -1,0 +1,390 @@
+/* Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* 限制頁面最大寬度 600px */
+#pageContainer {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 10px;
+}
+
+/* 主體設定 */
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  background: #fff;
+  color: #000;
+  overflow-x: hidden;
+}
+
+/* 各頁面 */
+.page {
+  display: none;
+  animation: fadeIn 0.3s ease-in-out;
+}
+.page.active {
+  display: block;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* 頁首 */
+header {
+  text-align: center;
+  padding: 10px;
+  background: #b71c1c;
+  color: #fff;
+}
+.logo {
+  width: 60px;
+  margin-bottom: 5px;
+}
+header h1 {
+  font-size: 1.6em;
+}
+
+/* 首頁 */
+.home-content {
+  text-align: center;
+  padding: 20px;
+}
+.home-inputs {
+  margin-top: 20px;
+}
+.home-inputs label {
+  display: block;
+  margin: 5px 0;
+}
+.home-inputs input, .home-inputs select {
+  width: 80%;
+  padding: 8px;
+  margin-bottom: 10px;
+}
+
+/* Pool 賽頁面 */
+#poolEventName {
+  text-align: center;
+  font-size: 1.4em;
+  margin-bottom: 10px;
+}
+
+/* Pool 分頁按鈕 */
+.pool-tabs {
+  text-align: center;
+}
+.pool-tab {
+  padding: 10px 15px;
+  background: #b71c1c;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  margin: 5px;
+  font-size: 1em;
+  cursor: pointer;
+}
+.pool-tab.active {
+  box-shadow: 0px 3px 5px rgba(0,0,0,0.3);
+}
+
+/* 下拉選單選擇人數（Pool 專用） */
+.pool-player-select {
+  margin: 5px auto;
+  display: block;
+  font-size: 1em;
+}
+
+/* Pool 表格 */
+.pool-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8em;
+  margin-top: 8px;
+}
+.pool-table th, .pool-table td {
+  border: 1px solid #b71c1c;
+  text-align: center;
+  padding: 5px;
+}
+.self-cell {
+  background: #000;
+  color: #fff;
+}
+.match-cell {
+  background: #f0f0f0;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+.match-cell:hover {
+  background: #e0e0e0;
+}
+/* 對戰結果 */
+.pool-win {
+  font-weight: bold;
+  color: #4caf50;
+}
+.pool-loss {
+  font-weight: bold;
+  color: #f44336;
+}
+.ts-cell, .tr-cell, .ind-cell, .pi-cell {
+  font-weight: bold;
+}
+
+/* 被 DQ 選手樣式：劃線並紅底 */
+.dq {
+  text-decoration: line-through;
+  background-color: #ffcccc;
+  color: red;
+}
+
+/* Overall Seeding 表格 */
+#seedingResultsSection table,
+#normalResultsContainer table,
+#dqResultsContainer table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0 auto;
+}
+#seedingResultsSection th, #seedingResultsSection td,
+#normalResultsContainer th, #normalResultsContainer td,
+#dqResultsContainer th, #dqResultsContainer td {
+  border: 1px solid #b71c1c;
+  text-align: center;
+  padding: 5px;
+  font-size: 0.9em;
+}
+
+
+/* 淘汰賽對陣表 */
+#tablesSection {
+  background: #fff;
+  padding: 10px;
+  border: 1px solid #b71c1c;
+  border-radius: 5px;
+  margin-top: 10px;
+}
+#bracketContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.bracket-round {
+  background: #f5f5f5;
+  padding: 8px;
+  border: 1px solid #b71c1c;
+  border-radius: 5px;
+}
+.bracket-match {
+  border: 1px solid #b71c1c;
+  padding: 5px;
+  border-radius: 5px;
+  margin-bottom: 4px;
+  text-align: center;
+  font-size: 0.85em;
+}
+
+/* Final Results 表格 */
+#finalResultsSection table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+#finalResultsSection th, #finalResultsSection td {
+  border: 1px solid #b71c1c;
+  text-align: center;
+  padding: 5px;
+  font-size: 0.9em;
+}
+.final-btns {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* 單挑比賽 */
+.match-info {
+  background: #fff;
+  padding: 10px;
+  border: 1px solid #b71c1c;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+.match-players {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 10px;
+}
+.match-player {
+  width: 45%;
+}
+.match-player h3,
+.score-display {
+  text-align: center;
+}
+.score-display {
+  font-size: 1.8em;
+  background: #f8f8f8;
+  padding: 10px;
+  border-radius: 5px;
+  margin-bottom: 5px;
+}
+.score-controls {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 5px;
+}
+.score-controls button {
+  padding: 10px;
+  font-size: 1em;
+}
+
+/* 裁判發牌區 */
+.card-controls {
+  text-align: center;
+  margin-bottom: 10px;
+}
+.card-section {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.card-group {
+  width: 45%;
+  text-align: center;
+}
+.card-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  margin-bottom: 5px;
+}
+.card-btn.none {
+  color: #000;
+  background: #e0e0e0;
+}
+.card-btn.yellow {
+  background: #fdd835;
+  color: #000;
+}
+.card-btn.red {
+  background: #e53935;
+  color: #fff;
+}
+.card-btn.black {
+  background: #212121;
+  color: #fff;
+}
+.card-display {
+  font-size: 1em;
+  padding: 5px;
+  background: #f0f0f0;
+  border-radius: 5px;
+  text-align: center;
+}
+
+/* Tie-Break 輪盤動畫 */
+.roulette {
+  width: 100px;
+  height: 100px;
+  margin: 10px auto;
+  border: 5px solid #b71c1c;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2em;
+  color: #b71c1c;
+  animation: spin 2s linear infinite;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 按鈕 */
+.btn {
+  background: #b71c1c;
+  color: #fff;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  font-size: 1em;
+  width: 100%;
+  cursor: pointer;
+  margin-top: 5px;
+  box-shadow: 0px 2px 4px rgba(0,0,0,0.3);
+}
+.btn:hover {
+  background: #a31515;
+}
+.btn.btn-danger {
+  background: #212121;
+}
+
+/* Responsive: 600px 以下 */
+@media (max-width: 600px) {
+  #pageContainer { padding: 5px; }
+  header { padding: 5px; }
+  .home-inputs input, .home-inputs select { width: 100%; }
+  .match-players { flex-direction: column; }
+  .match-player, .card-group { width: 100%; }
+}
+/* 底部導航：上拉式 */
+#bottomNav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%) translateY(100%); /* 預設隱藏在畫面下方 */
+  transition: transform 0.3s ease;
+  width: 100%;
+  max-width: 600px;
+  background: #b71c1c;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  align-items: center;
+  padding: 10px 0 5px; /* 上方留一點空間給箭頭 */
+  box-shadow: 0 -2px 5px rgba(0,0,0,0.4);
+  overflow: visible; /* 讓絕對定位的箭頭可顯示在導航外部範圍 */
+}
+#bottomNav.open {
+  transform: translateX(-50%) translateY(0);
+}
+
+/* 箭頭：絕對定位在導航頂部中央 */
+.nav-arrow {
+  position: absolute;
+  top: -20px;      /* 往上移 */
+  left: 50%;
+  transform: translateX(-50%);
+  background: #b71c1c;
+  color: #fff;
+  font-size: 1.2em;
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  box-shadow: 0 -2px 4px rgba(0,0,0,0.3);
+}
+
+/* 分頁按鈕 */
+.nav-btn {
+  flex: 1 1 30%;
+  margin: 5px;
+  padding: 10px;
+  background: #b71c1c;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9em;
+  cursor: pointer;
+  text-align: center;
+}
+.nav-btn:hover {
+  background: #a31515;
+}
