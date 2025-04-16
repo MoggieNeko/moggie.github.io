@@ -346,7 +346,7 @@ document.addEventListener("DOMContentLoaded", function() {
       "language": "語言 / Language",
       "about": "關於",
       "version": "版本",
-      "copyright": "© 2023 EAF. 保留所有權利。",
+      "copyright": "© 2025 EAF. 保留所有權利。",
       
       // 警告和通知
       "playerNotFound": "找不到對應的選手資料！",
