@@ -28,9 +28,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
   
-  // 檢查Supabase存儲桶設置
-  checkSupabaseStorageBucket().then(isValid => {
-    console.log('存儲桶檢查結果:', isValid ? '正常' : '有問題');
+  // 修復存儲桶設置
+  fixStorageBucketSettings().then(success => {
+    console.log('存儲桶設置修復結果:', success ? '成功' : '失敗');
   });
 });
 
@@ -286,63 +286,128 @@ async function registerUser() {
   const confirmPassword = document.getElementById('registerConfirmPassword').value;
   const errorMessage = document.getElementById('registerError');
   
+  errorMessage.textContent = '註冊中...';
+  errorMessage.style.color = '#1565c0';
+  
   if (!name || !email || !password) {
     errorMessage.textContent = '請填寫所有必填字段';
+    errorMessage.style.color = '#c62828';
     return;
   }
   
   if (password !== confirmPassword) {
     errorMessage.textContent = '兩次輸入的密碼不一致';
+    errorMessage.style.color = '#c62828';
     return;
   }
   
   if (password.length < 8) {
     errorMessage.textContent = '密碼長度應至少為8個字符';
+    errorMessage.style.color = '#c62828';
     return;
   }
   
   try {
     // 1. 註冊用戶
-    const { data, error } = await supabase.auth.signUp({
+    console.log('開始註冊用戶:', email);
+    const signUpOptions = {
       email: email,
       password: password,
       options: {
         data: { name: name }
       }
-    });
+    };
+    console.log('註冊選項:', signUpOptions);
+    
+    const { data, error } = await supabase.auth.signUp(signUpOptions);
+    
+    console.log('註冊結果:', data);
+    console.log('註冊錯誤:', error);
     
     if (error) {
-      throw error;
+      console.error('註冊用戶失敗:', error);
+      errorMessage.textContent = '註冊失敗: ' + error.message;
+      errorMessage.style.color = '#c62828';
+      return;
     }
     
-    if (data && data.user) {
-      // 2. 創建用戶資料
-      const { error: profileError } = await supabase
+    if (!data || !data.user) {
+      console.error('註冊成功但未返回用戶數據');
+      errorMessage.textContent = '註冊過程中發生錯誤: 未返回用戶數據';
+      errorMessage.style.color = '#c62828';
+      return;
+    }
+    
+    // 2. 創建用戶資料
+    console.log('正在創建用戶資料:', data.user.id);
+    const profileData = { 
+      id: data.user.id, 
+      name: name, 
+      email: email,
+      phone: '',
+      team: '',
+      bio: '',
+      avatar_url: '',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    
+    console.log('要插入的資料:', profileData);
+    
+    try {
+      const { data: insertData, error: profileError } = await supabase
         .from('profiles')
-        .insert([{ 
-          id: data.user.id, 
-          name: name, 
-          email: email,
-          phone: '',
-          team: '',
-          bio: '',
-          avatar_url: '',
-          created_at: new Date()
-        }]);
+        .insert([profileData])
+        .select();
+      
+      console.log('插入結果:', insertData);
       
       if (profileError) {
-        console.error('Error creating profile:', profileError.message);
+        console.error('創建用戶資料失敗:', profileError);
+        // 顯示詳細錯誤信息
+        let errorDetail = profileError.message;
+        if (profileError.details) errorDetail += ' - ' + profileError.details;
+        if (profileError.hint) errorDetail += ' (提示: ' + profileError.hint + ')';
+        
+        errorMessage.textContent = '創建用戶資料失敗: ' + errorDetail;
+        errorMessage.style.color = '#c62828';
+        
+        // 如果資料創建失敗，仍然嘗試繼續登入流程
+        console.log('嘗試繼續登入流程，即使資料創建失敗');
+      } else {
+        console.log('用戶資料創建成功:', insertData);
       }
+    } catch (insertError) {
+      console.error('插入用戶資料時發生異常:', insertError);
+      errorMessage.textContent = '創建用戶資料失敗: ' + insertError.message;
+      errorMessage.style.color = '#c62828';
+    }
+    
+    // 3. 檢查註冊結果並決定後續操作
+    if (data.session) {
+      // 註冊並自動登入成功
+      console.log('用戶已註冊並自動登入', data.session);
+      currentUser = await fetchUserProfile(data.user.id);
       
-      // 3. 登入成功，獲取用戶資料
-      await fetchUserProfile(data.user.id);
-      
-      // 4. 顯示主應用
-      showMainApp();
+      if (currentUser) {
+        updateUserDisplay();
+        showMainApp();
+        console.log('用戶已成功登入並切換到主應用');
+      } else {
+        console.error('無法獲取用戶資料');
+        errorMessage.textContent = '註冊成功但無法獲取用戶資料';
+        errorMessage.style.color = '#c62828';
+      }
+    } else {
+      // 註冊成功但需要郵件驗證
+      console.log('註冊成功，等待郵件驗證');
+      errorMessage.textContent = '註冊成功！請檢查您的電子郵件進行驗證。';
+      errorMessage.style.color = '#2e7d32';
     }
   } catch (error) {
-    console.error('Registration error:', error.message);
-    errorMessage.textContent = '註冊失敗: ' + (error.message || '請嘗試使用其他電子郵箱');
+    console.error('註冊過程中發生異常:', error);
+    errorMessage.textContent = '註冊過程中發生錯誤: ' + (error.message || '未知錯誤');
+    errorMessage.style.color = '#c62828';
   }
 }
 
@@ -981,6 +1046,94 @@ async function checkSupabaseStorageBucket() {
     }
   } catch (error) {
     console.error('檢查存儲桶設置時出錯:', error);
+    return false;
+  }
+}
+
+// 修復存儲桶設置以確保avatars是公開可訪問的
+async function fixStorageBucketSettings() {
+  try {
+    console.log('嘗試修復存儲桶設置...');
+    
+    // 檢查avatars存儲桶是否存在
+    const { data: buckets, error: bucketsError } = await supabase
+      .storage
+      .listBuckets();
+    
+    if (bucketsError) {
+      console.error('獲取存儲桶列表失敗:', bucketsError);
+      return false;
+    }
+    
+    console.log('現有存儲桶:', buckets);
+    
+    // 如果avatars存儲桶不存在，則創建它
+    const avatarBucket = buckets.find(b => b.name === 'avatars');
+    if (!avatarBucket) {
+      console.log('創建avatars存儲桶');
+      const { data: newBucket, error: createError } = await supabase
+        .storage
+        .createBucket('avatars', { public: true });
+      
+      if (createError) {
+        console.error('創建avatars存儲桶失敗:', createError);
+      } else {
+        console.log('成功創建avatars存儲桶:', newBucket);
+      }
+    } else {
+      console.log('avatars存儲桶已存在:', avatarBucket);
+      
+      // 如果存儲桶不是公開的，嘗試更新它
+      if (!avatarBucket.public) {
+        console.log('更新avatars存儲桶為公開訪問');
+        const { data: updateData, error: updateError } = await supabase
+          .storage
+          .updateBucket('avatars', { public: true });
+        
+        if (updateError) {
+          console.error('更新avatars存儲桶失敗:', updateError);
+        } else {
+          console.log('成功更新avatars存儲桶:', updateData);
+        }
+      }
+    }
+    
+    // 測試上傳一個小文件到存儲桶
+    const testBlob = new Blob(['test'], { type: 'text/plain' });
+    const testPath = 'test_' + new Date().getTime() + '.txt';
+    
+    console.log('嘗試上傳測試文件到存儲桶:', testPath);
+    const { data: uploadData, error: uploadError } = await supabase
+      .storage
+      .from('avatars')
+      .upload(testPath, testBlob, { upsert: true });
+    
+    if (uploadError) {
+      console.error('測試文件上傳失敗:', uploadError);
+      return false;
+    }
+    
+    console.log('測試文件上傳成功:', uploadData);
+    
+    // 獲取並檢查公共URL
+    const { data: urlData, error: urlError } = await supabase
+      .storage
+      .from('avatars')
+      .getPublicUrl(testPath);
+    
+    if (urlError) {
+      console.error('獲取測試文件公共URL失敗:', urlError);
+      return false;
+    }
+    
+    console.log('測試文件公共URL:', urlData);
+    
+    // 清理測試文件
+    await supabase.storage.from('avatars').remove([testPath]);
+    
+    return true;
+  } catch (error) {
+    console.error('修復存儲桶設置時發生錯誤:', error);
     return false;
   }
 } 
