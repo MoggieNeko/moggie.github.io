@@ -441,6 +441,97 @@ document.addEventListener("DOMContentLoaded", function() {
       "uploadingAvatar": "正在上傳頭像...",
       "avatarUploadFailed": "頭像上傳失敗",
       "logout": "登出",
+      
+      // 註冊和認證相關
+      "fillRequiredFields": "請填寫所有必填欄位",
+      "passwordsNotMatch": "密碼和確認密碼不匹配",
+      "emailAlreadyExists": "此電子郵件已被註冊",
+      "registrationFailed": "註冊失敗",
+      "registrationSuccess": "註冊成功！請登入",
+      "registrationSuccessProfileFailed": "註冊成功，但創建用戶資料時遇到問題",
+      "registrationSuccessWithLimitedData": "註冊成功，但只有部分資料被保存",
+      "unknownError": "未知錯誤",
+      
+      // 個人資料頁面
+      "profileTitle": "個人資料",
+      "name": "姓名",
+      "email": "電子郵件",
+      "emailNotEditable": "電子郵件地址不可更改",
+      "phone": "電話",
+      "team": "所屬團隊/組織",
+      "bio": "個人簡介",
+      "avatar": "個人頭像",
+      "changeAvatar": "更換頭像",
+      "saveProfile": "保存資料",
+      "profileUpdateSuccess": "資料更新成功！",
+      "profileUpdateFailed": "更新資料失敗！",
+      "uploadingAvatar": "正在上傳頭像...",
+      "avatarUploadFailed": "頭像上傳失敗",
+      "logout": "登出",
+      
+      // 註冊和認證相關
+      "fillRequiredFields": "請填寫所有必填字段",
+      "passwordsNotMatch": "密码和确认密码不匹配",
+      "emailAlreadyExists": "此电子邮件已被注册",
+      "registrationFailed": "注册失败",
+      "registrationSuccess": "注册成功！请登录",
+      "registrationSuccessProfileFailed": "注册成功，但创建用户资料时遇到问题",
+      "registrationSuccessWithLimitedData": "注册成功，但只有部分资料被保存",
+      "unknownError": "未知错误",
+      
+      // 個人資料頁面
+      "profileTitle": "個人資料",
+      "name": "姓名",
+      "email": "電子郵件",
+      "emailNotEditable": "電子郵件地址不可更改",
+      "phone": "電話",
+      "team": "所屬團隊/組織",
+      "bio": "個人簡介",
+      "avatar": "個人頭像",
+      "changeAvatar": "更換頭像",
+      "saveProfile": "保存資料",
+      "profileUpdateSuccess": "資料更新成功！",
+      "profileUpdateFailed": "更新資料失敗！",
+      "uploadingAvatar": "正在上傳頭像...",
+      "avatarUploadFailed": "頭像上傳失敗",
+      "logout": "登出",
+      
+      // 註冊和認證相關
+      "fillRequiredFields": "請填寫所有必填字段",
+      "passwordsNotMatch": "密码和确认密码不匹配",
+      "emailAlreadyExists": "此电子邮件已被注册",
+      "registrationFailed": "注册失败",
+      "registrationSuccess": "注册成功！请登录",
+      "registrationSuccessProfileFailed": "注册成功，但创建用户资料时遇到问题",
+      "registrationSuccessWithLimitedData": "注册成功，但只有部分资料被保存",
+      "unknownError": "未知错误",
+      
+      // 個人資料頁面
+      "profileTitle": "個人資料",
+      "name": "姓名",
+      "email": "電子郵件",
+      "emailNotEditable": "電子郵件地址不可更改",
+      "phone": "電話",
+      "team": "所屬團隊/組織",
+      "bio": "個人簡介",
+      "avatar": "個人頭像",
+      "changeAvatar": "更換頭像",
+      "saveProfile": "保存資料",
+      "profileUpdateSuccess": "資料更新成功！",
+      "profileUpdateFailed": "更新資料失敗！",
+      "uploadingAvatar": "正在上傳頭像...",
+      "avatarUploadFailed": "頭像上傳失敗",
+      "logout": "登出",
+      
+      // 註冊和認證相關
+      "fillRequiredFields": "請填寫所有必填字段",
+      "passwordsNotMatch": "密码和确认密码不匹配",
+      "emailAlreadyExists": "此电子邮件已被注册",
+      "registrationFailed": "注册失败",
+      "registrationSuccess": "注册成功！请登录",
+      "registrationSuccessProfileFailed": "注册成功，但创建用户资料时遇到问题",
+      "registrationSuccessWithLimitedData": "注册成功，但只有部分资料被保存",
+      "unknownError": "未知错误"
     },
     
     "zh-CN": { // 簡體中文
@@ -602,6 +693,70 @@ document.addEventListener("DOMContentLoaded", function() {
       "uploadingAvatar": "正在上传头像...",
       "avatarUploadFailed": "头像上传失败",
       "logout": "登出",
+      
+      // 註冊和認證相關
+      "fillRequiredFields": "请填写所有必填字段",
+      "passwordsNotMatch": "密码和确认密码不匹配",
+      "emailAlreadyExists": "此电子邮件已被注册",
+      "registrationFailed": "注册失败",
+      "registrationSuccess": "注册成功！请登录",
+      "registrationSuccessProfileFailed": "注册成功，但创建用户资料时遇到问题",
+      "registrationSuccessWithLimitedData": "注册成功，但只有部分资料被保存",
+      "unknownError": "未知错误",
+      
+      // 個人資料頁面
+      "profileTitle": "個人資料",
+      "name": "姓名",
+      "email": "電子郵件",
+      "emailNotEditable": "電子郵件地址不可更改",
+      "phone": "電話",
+      "team": "所屬團隊/組織",
+      "bio": "個人簡介",
+      "avatar": "個人頭像",
+      "changeAvatar": "更換頭像",
+      "saveProfile": "保存資料",
+      "profileUpdateSuccess": "資料更新成功！",
+      "profileUpdateFailed": "更新資料失敗！",
+      "uploadingAvatar": "正在上傳頭像...",
+      "avatarUploadFailed": "頭像上傳失敗",
+      "logout": "登出",
+      
+      // 註冊和認證相關
+      "fillRequiredFields": "請填寫所有必填字段",
+      "passwordsNotMatch": "密码和确认密码不匹配",
+      "emailAlreadyExists": "此电子邮件已被注册",
+      "registrationFailed": "注册失败",
+      "registrationSuccess": "注册成功！请登录",
+      "registrationSuccessProfileFailed": "注册成功，但创建用户资料时遇到问题",
+      "registrationSuccessWithLimitedData": "注册成功，但只有部分资料被保存",
+      "unknownError": "未知错误",
+      
+      // 個人資料頁面
+      "profileTitle": "個人資料",
+      "name": "姓名",
+      "email": "電子郵件",
+      "emailNotEditable": "電子郵件地址不可更改",
+      "phone": "電話",
+      "team": "所屬團隊/組織",
+      "bio": "個人簡介",
+      "avatar": "個人頭像",
+      "changeAvatar": "更換頭像",
+      "saveProfile": "保存資料",
+      "profileUpdateSuccess": "資料更新成功！",
+      "profileUpdateFailed": "更新資料失敗！",
+      "uploadingAvatar": "正在上傳頭像...",
+      "avatarUploadFailed": "頭像上傳失敗",
+      "logout": "登出",
+      
+      // 註冊和認證相關
+      "fillRequiredFields": "請填寫所有必填字段",
+      "passwordsNotMatch": "密码和确认密码不匹配",
+      "emailAlreadyExists": "此电子邮件已被注册",
+      "registrationFailed": "注册失败",
+      "registrationSuccess": "注册成功！请登录",
+      "registrationSuccessProfileFailed": "注册成功，但创建用户资料时遇到问题",
+      "registrationSuccessWithLimitedData": "注册成功，但只有部分资料被保存",
+      "unknownError": "未知错误"
     },
     
     "en": { // 英文
@@ -747,7 +902,17 @@ document.addEventListener("DOMContentLoaded", function() {
       "profileUpdateFailed": "Failed to update profile!",
       "uploadingAvatar": "Uploading avatar...",
       "avatarUploadFailed": "Avatar upload failed",
-      "logout": "Log out",
+      "logout": "Logout",
+      
+      // Registration and Authentication
+      "fillRequiredFields": "Please fill in all required fields",
+      "passwordsNotMatch": "Passwords do not match",
+      "emailAlreadyExists": "This email is already registered",
+      "registrationFailed": "Registration failed",
+      "registrationSuccess": "Registration successful! Please log in",
+      "registrationSuccessProfileFailed": "Registration successful, but there was a problem creating your profile",
+      "registrationSuccessWithLimitedData": "Registration successful, but only partial data was saved",
+      "unknownError": "Unknown error"
     }
   };
   
