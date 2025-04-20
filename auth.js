@@ -32,16 +32,6 @@ document.addEventListener('DOMContentLoaded', async function() {
   // 初始化UI
   updateUILanguage(getCurrentLanguage());
   
-  // 設置加載指示器的樣式，使其居中顯示
-  const loadingElement = document.getElementById('auth-loading');
-  if (loadingElement) {
-    loadingElement.style.position = 'fixed';
-    loadingElement.style.top = '50%';
-    loadingElement.style.left = '50%';
-    loadingElement.style.transform = 'translate(-50%, -50%)';
-    loadingElement.style.zIndex = '1000';
-  }
-  
   // 檢查數據庫設置
   const dbCheckResult = await checkDatabaseSetup();
   console.log('數據庫檢查結果:', dbCheckResult);
