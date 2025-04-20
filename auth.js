@@ -299,12 +299,12 @@ async function registerUser() {
   document.getElementById('auth-loading').style.display = 'block';
   
   try {
-    const name = document.getElementById('register-name').value.trim();
-    const email = document.getElementById('register-email').value.trim();
-    const phone = document.getElementById('register-phone').value.trim();
-    const team = document.getElementById('register-team').value.trim();
-    const password = document.getElementById('register-password').value;
-    const confirmPassword = document.getElementById('register-confirm-password').value;
+    const name = document.getElementById('registerName').value.trim();
+    const email = document.getElementById('registerEmail').value.trim();
+    const phone = document.getElementById('registerPhone').value.trim();
+    const team = document.getElementById('registerTeam').value.trim();
+    const password = document.getElementById('registerPassword').value;
+    const confirmPassword = document.getElementById('registerConfirmPassword').value;
     
     // 驗證必填欄位
     if (!name || !email || !password) {
@@ -404,11 +404,11 @@ async function registerUser() {
     }
     
     // 清除表單並切換到登錄頁
-    document.getElementById('register-form').reset();
+    document.getElementById('registerForm').reset();
     alert(t('registrationSuccess'));
     
     // 切換到登錄頁
-    showTab('login-tab');
+    showLoginForm();
     
   } catch (error) {
     console.error('註冊過程中發生未預期錯誤:', error);
