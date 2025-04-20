@@ -22,6 +22,11 @@
         <h2>比賽管理系統</h2>
       </div>
       
+      <!-- 加載指示器 -->
+      <div id="auth-loading" class="loading-spinner" style="display:none;">
+        <div class="spinner"></div>
+      </div>
+      
       <!-- 登入表單 -->
       <div id="loginForm" class="auth-form">
         <h3>登入</h3>
@@ -49,6 +54,14 @@
         <div class="form-group">
           <label for="registerEmail">電子郵件</label>
           <input type="email" id="registerEmail" placeholder="your@email.com" required>
+        </div>
+        <div class="form-group">
+          <label for="registerPhone">電話</label>
+          <input type="tel" id="registerPhone" placeholder="請輸入您的電話號碼">
+        </div>
+        <div class="form-group">
+          <label for="registerTeam">所屬團隊/組織</label>
+          <input type="text" id="registerTeam" placeholder="請輸入您的團隊或組織名稱">
         </div>
         <div class="form-group">
           <label for="registerPassword">密碼</label>
