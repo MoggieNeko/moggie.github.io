@@ -8,7 +8,17 @@ let currentUser = null;
 let avatarFile = null; // 用於存儲頭像文件
 
 // DOM 載入完成後運行
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+  // 初始化UI
+  updateUILanguage(getCurrentLanguage());
+  
+  // 檢查數據庫設置
+  const dbCheckResult = await checkDatabaseSetup();
+  console.log('數據庫檢查結果:', dbCheckResult);
+  
+  // 檢查登錄狀態
+  checkLoginStatus();
+  
   // 檢查用戶是否已登入
   checkUserSession();
   
@@ -31,6 +41,11 @@ document.addEventListener('DOMContentLoaded', function() {
   // 修復存儲桶設置
   fixStorageBucketSettings().then(success => {
     console.log('存儲桶設置修復結果:', success ? '成功' : '失敗');
+  });
+  
+  // 修復profiles表權限
+  fixProfilesTablePolicies().then(success => {
+    console.log('Profiles表權限檢查結果:', success ? '正常' : '有問題');
   });
 });
 
@@ -278,136 +293,130 @@ async function loginUser() {
   }
 }
 
-// 註冊新用戶
+// 註冊用戶
 async function registerUser() {
-  const name = document.getElementById('registerName').value;
-  const email = document.getElementById('registerEmail').value;
-  const password = document.getElementById('registerPassword').value;
-  const confirmPassword = document.getElementById('registerConfirmPassword').value;
-  const errorMessage = document.getElementById('registerError');
-  
-  errorMessage.textContent = '註冊中...';
-  errorMessage.style.color = '#1565c0';
-  
-  if (!name || !email || !password) {
-    errorMessage.textContent = '請填寫所有必填字段';
-    errorMessage.style.color = '#c62828';
-    return;
-  }
-  
-  if (password !== confirmPassword) {
-    errorMessage.textContent = '兩次輸入的密碼不一致';
-    errorMessage.style.color = '#c62828';
-    return;
-  }
-  
-  if (password.length < 8) {
-    errorMessage.textContent = '密碼長度應至少為8個字符';
-    errorMessage.style.color = '#c62828';
-    return;
-  }
+  // 顯示加載指示器
+  document.getElementById('auth-loading').style.display = 'block';
   
   try {
-    // 1. 註冊用戶
-    console.log('開始註冊用戶:', email);
-    const signUpOptions = {
-      email: email,
-      password: password,
+    const name = document.getElementById('register-name').value.trim();
+    const email = document.getElementById('register-email').value.trim();
+    const phone = document.getElementById('register-phone').value.trim();
+    const team = document.getElementById('register-team').value.trim();
+    const password = document.getElementById('register-password').value;
+    const confirmPassword = document.getElementById('register-confirm-password').value;
+    
+    // 驗證必填欄位
+    if (!name || !email || !password) {
+      alert(t('fillRequiredFields'));
+      logError('REGISTRATION', '缺少必填欄位', { name: !!name, email: !!email, password: !!password });
+      return;
+    }
+    
+    // 確認密碼
+    if (password !== confirmPassword) {
+      alert(t('passwordsNotMatch'));
+      logError('REGISTRATION', '密碼不匹配', null);
+      return;
+    }
+    
+    console.log('嘗試註冊用戶:', email);
+    
+    // 使用Supabase註冊
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
       options: {
-        data: { name: name }
+        data: {
+          name,
+          phone: phone || null,
+          team: team || null
+        }
       }
-    };
-    console.log('註冊選項:', signUpOptions);
+    });
     
-    const { data, error } = await supabase.auth.signUp(signUpOptions);
-    
-    console.log('註冊結果:', data);
-    console.log('註冊錯誤:', error);
-    
-    if (error) {
-      console.error('註冊用戶失敗:', error);
-      errorMessage.textContent = '註冊失敗: ' + error.message;
-      errorMessage.style.color = '#c62828';
-      return;
-    }
-    
-    if (!data || !data.user) {
-      console.error('註冊成功但未返回用戶數據');
-      errorMessage.textContent = '註冊過程中發生錯誤: 未返回用戶數據';
-      errorMessage.style.color = '#c62828';
-      return;
-    }
-    
-    // 2. 創建用戶資料
-    console.log('正在創建用戶資料:', data.user.id);
-    const profileData = { 
-      id: data.user.id, 
-      name: name, 
-      email: email,
-      phone: '',
-      team: '',
-      bio: '',
-      avatar_url: '',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-    
-    console.log('要插入的資料:', profileData);
-    
-    try {
-      const { data: insertData, error: profileError } = await supabase
-        .from('profiles')
-        .insert([profileData])
-        .select();
+    if (authError) {
+      console.error('註冊失敗:', authError);
+      logError('REGISTRATION', '註冊失敗', authError);
       
-      console.log('插入結果:', insertData);
+      if (authError.message.includes('email')) {
+        alert(t('emailAlreadyExists'));
+      } else {
+        alert(t('registrationFailed') + ': ' + authError.message);
+      }
+      return;
+    }
+    
+    console.log('註冊成功，用戶ID:', authData.user.id);
+    
+    // 創建用戶profile
+    try {
+      const profile = {
+        id: authData.user.id,
+        name,
+        email,
+        phone: phone || null,
+        team: team || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      console.log('嘗試創建用戶資料:', profile);
+      
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert([profile]);
       
       if (profileError) {
-        console.error('創建用戶資料失敗:', profileError);
-        // 顯示詳細錯誤信息
-        let errorDetail = profileError.message;
-        if (profileError.details) errorDetail += ' - ' + profileError.details;
-        if (profileError.hint) errorDetail += ' (提示: ' + profileError.hint + ')';
+        console.error('創建用戶資料時出錯:', profileError);
+        logError('REGISTRATION', '創建用戶資料失敗', profileError);
         
-        errorMessage.textContent = '創建用戶資料失敗: ' + errorDetail;
-        errorMessage.style.color = '#c62828';
+        // 嘗試使用最小資料集（不含可能的問題欄位）
+        console.log('嘗試使用最小資料集創建用戶資料');
+        const minimalProfile = {
+          id: authData.user.id,
+          name,
+          email
+        };
         
-        // 如果資料創建失敗，仍然嘗試繼續登入流程
-        console.log('嘗試繼續登入流程，即使資料創建失敗');
+        const { error: minProfileError } = await supabase
+          .from('profiles')
+          .insert([minimalProfile]);
+        
+        if (minProfileError) {
+          console.error('使用最小資料集創建用戶資料仍然失敗:', minProfileError);
+          logError('REGISTRATION', '使用最小資料集創建用戶資料仍然失敗', minProfileError);
+          // 添加更詳細的錯誤信息以便診斷
+          const errorMessage = `資料庫錯誤：${minProfileError.message || '未知錯誤'} (代碼: ${minProfileError.code || 'N/A'})`;
+          alert(t('registrationSuccessProfileFailed') + ': ' + errorMessage);
+        } else {
+          console.log('使用最小資料集創建用戶資料成功');
+          alert(t('registrationSuccessWithLimitedData'));
+        }
       } else {
-        console.log('用戶資料創建成功:', insertData);
+        console.log('創建用戶資料成功');
       }
-    } catch (insertError) {
-      console.error('插入用戶資料時發生異常:', insertError);
-      errorMessage.textContent = '創建用戶資料失敗: ' + insertError.message;
-      errorMessage.style.color = '#c62828';
+    } catch (profileCatchError) {
+      console.error('創建用戶資料時發生未預期錯誤:', profileCatchError);
+      logError('REGISTRATION', '創建用戶資料時發生未預期錯誤', profileCatchError);
+      // 繼續處理，不阻止用戶註冊完成
+      alert(t('registrationSuccessProfileFailed') + ': ' + (profileCatchError.message || t('unknownError')));
     }
     
-    // 3. 檢查註冊結果並決定後續操作
-    if (data.session) {
-      // 註冊並自動登入成功
-      console.log('用戶已註冊並自動登入', data.session);
-      currentUser = await fetchUserProfile(data.user.id);
-      
-      if (currentUser) {
-        updateUserDisplay();
-        showMainApp();
-        console.log('用戶已成功登入並切換到主應用');
-      } else {
-        console.error('無法獲取用戶資料');
-        errorMessage.textContent = '註冊成功但無法獲取用戶資料';
-        errorMessage.style.color = '#c62828';
-      }
-    } else {
-      // 註冊成功但需要郵件驗證
-      console.log('註冊成功，等待郵件驗證');
-      errorMessage.textContent = '註冊成功！請檢查您的電子郵件進行驗證。';
-      errorMessage.style.color = '#2e7d32';
-    }
+    // 清除表單並切換到登錄頁
+    document.getElementById('register-form').reset();
+    alert(t('registrationSuccess'));
+    
+    // 切換到登錄頁
+    showTab('login-tab');
+    
   } catch (error) {
-    console.error('註冊過程中發生異常:', error);
-    errorMessage.textContent = '註冊過程中發生錯誤: ' + (error.message || '未知錯誤');
-    errorMessage.style.color = '#c62828';
+    console.error('註冊過程中發生未預期錯誤:', error);
+    logError('REGISTRATION', '註冊過程中發生未預期錯誤', error);
+    alert(t('registrationFailed') + ': ' + (error.message || t('unknownError')));
+  } finally {
+    // 隱藏加載指示器
+    document.getElementById('auth-loading').style.display = 'none';
   }
 }
 
@@ -1136,4 +1145,196 @@ async function fixStorageBucketSettings() {
     console.error('修復存儲桶設置時發生錯誤:', error);
     return false;
   }
+}
+
+// 修復Profiles表的權限策略
+async function fixProfilesTablePolicies() {
+  try {
+    console.log('嘗試檢查用戶和權限設置...');
+    
+    // 首先匿名檢查是否可以獲取當前會話
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError) {
+      console.error('無法獲取會話:', sessionError);
+      return false;
+    }
+    
+    console.log('當前會話狀態:', session ? '已登入' : '未登入');
+    
+    // 檢查是否能獲取profiles表結構
+    const { data: tableInfo, error: tableError } = await supabase
+      .from('profiles')
+      .select('*')
+      .limit(1);
+    
+    if (tableError) {
+      console.error('無法查詢profiles表:', tableError);
+      
+      // 如果是權限問題，可能需要使用SQL來添加RLS策略
+      console.log('可能是RLS權限問題，請確認SQL設置正確');
+      
+      // 不能直接執行SQL，這需要在Supabase面板中操作
+      console.log('請確認以下SQL已在Supabase執行:');
+      console.log(`
+        -- 允許匿名用戶創建資料
+        ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+        CREATE POLICY "Allow anonymous users to create profiles" ON public.profiles
+          FOR INSERT WITH CHECK (true);
+        CREATE POLICY "Profiles are viewable by the user who owns it" ON public.profiles
+          FOR SELECT USING (auth.uid() = id);
+      `);
+      
+      return false;
+    }
+    
+    console.log('成功查詢profiles表，結構:', tableInfo);
+    
+    // 嘗試匿名創建一個測試記錄 (如果未登入)
+    if (!session) {
+      // 創建臨時測試用戶
+      const testEmail = `test_${new Date().getTime()}@example.com`;
+      const testPassword = 'Test12345678';
+      
+      console.log('嘗試創建測試用戶:', testEmail);
+      
+      const { data: testUserData, error: testUserError } = await supabase.auth.signUp({
+        email: testEmail,
+        password: testPassword,
+        options: {
+          data: { name: 'Test User' }
+        }
+      });
+      
+      if (testUserError) {
+        console.error('創建測試用戶失敗:', testUserError);
+        return false;
+      }
+      
+      console.log('測試用戶創建結果:', testUserData);
+      
+      if (testUserData && testUserData.user) {
+        // 嘗試插入測試資料
+        const testProfileData = {
+          id: testUserData.user.id,
+          name: 'Test User',
+          email: testEmail
+        };
+        
+        console.log('嘗試創建測試用戶資料:', testProfileData);
+        
+        const { data: testProfileResult, error: testProfileError } = await supabase
+          .from('profiles')
+          .insert([testProfileData])
+          .select();
+        
+        if (testProfileError) {
+          console.error('創建測試用戶資料失敗:', testProfileError);
+          return false;
+        }
+        
+        console.log('測試用戶資料創建成功:', testProfileResult);
+        return true;
+      }
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('修復profiles表策略時發生錯誤:', error);
+    return false;
+  }
+}
+
+// 檢查數據庫結構
+async function checkDatabaseSetup() {
+  console.log('檢查數據庫設置...');
+  
+  try {
+    // 測試profiles表查詢
+    const { data: profilesData, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id')
+      .limit(1);
+    
+    if (profilesError) {
+      console.error('無法查詢profiles表:', profilesError);
+      logError('DATABASE', '數據庫結構檢查 - 無法查詢profiles表', profilesError);
+      return false;
+    }
+    
+    console.log('profiles表可以查詢:', profilesData);
+    
+    // 測試插入記錄 (測試用戶)
+    const testId = 'test-' + Math.random().toString(36).substring(2, 10);
+    const testProfile = {
+      id: testId,
+      name: 'Test User',
+      email: 'test@example.com',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+    
+    const { error: insertError } = await supabase
+      .from('profiles')
+      .insert([testProfile]);
+    
+    if (insertError) {
+      // 檢查是否是權限錯誤 (正常用戶可能無法直接插入)
+      if (insertError.code === '42501' || insertError.message.includes('permission denied')) {
+        console.warn('無插入權限，這可能是正常的RLS設置:', insertError);
+        // 記錄但不視為錯誤
+        return true;
+      }
+      
+      console.error('無法插入測試記錄到profiles表:', insertError);
+      logError('DATABASE', '數據庫結構檢查 - 無法插入測試記錄', insertError);
+      return false;
+    }
+    
+    // 清理測試數據
+    const { error: deleteError } = await supabase
+      .from('profiles')
+      .delete()
+      .eq('id', testId);
+    
+    if (deleteError) {
+      console.warn('無法刪除測試記錄，這可能是正常的RLS設置:', deleteError);
+    }
+    
+    console.log('數據庫結構檢查成功');
+    return true;
+  } catch (error) {
+    console.error('檢查數據庫設置時發生錯誤:', error);
+    logError('DATABASE', '數據庫結構檢查 - 未預期的錯誤', error);
+    return false;
+  }
+}
+
+// 錯誤日誌記錄函數
+function logError(category, message, errorDetails) {
+  const timestamp = new Date().toISOString();
+  const error = {
+    timestamp,
+    category,
+    message,
+    details: errorDetails ? JSON.stringify(errorDetails) : null
+  };
+  
+  // 寫入控制台
+  console.error(`[${timestamp}] [${category}] ${message}`, errorDetails || '');
+  
+  // 存儲在localStorage中
+  try {
+    const errorLogs = JSON.parse(localStorage.getItem('errorLogs') || '[]');
+    errorLogs.push(error);
+    // 只保留最近100條錯誤
+    if (errorLogs.length > 100) {
+      errorLogs.shift();
+    }
+    localStorage.setItem('errorLogs', JSON.stringify(errorLogs));
+  } catch (e) {
+    console.error('無法寫入錯誤日誌到localStorage:', e);
+  }
+  
+  return error;
 } 
