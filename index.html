@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fancy Fencing</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Preload sound files -->
+  <link rel="preload" href="sounds/start.mp3" as="audio">
+  <link rel="preload" href="sounds/pause.mp3" as="audio">
+  <link rel="preload" href="sounds/end.mp3" as="audio">
+  <!-- Supabase JS v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <!-- 登入/註冊頁面 -->
+  <div id="authContainer" class="auth-container">
+    <div class="auth-card">
+      <div class="auth-header">
+        <img src="images/EAF_logo.png" alt="EAF Logo" class="auth-logo">
+        <h2>比賽管理系統</h2>
+      </div>
+      
+      <!-- 加載指示器 -->
+      <div id="auth-loading" class="loading-spinner" style="display:none;">
+        <div class="spinner"></div>
+      </div>
+      
+      <!-- 登入表單 -->
+      <div id="loginForm" class="auth-form">
+        <h3>登入</h3>
+        <div class="form-group">
+          <label for="loginEmail">電子郵件</label>
+          <input type="email" id="loginEmail" placeholder="your@email.com" required>
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">密碼</label>
+          <input type="password" id="loginPassword" required>
+        </div>
+        <div class="form-group checkbox-group">
+          <input type="checkbox" id="rememberMe">
+          <label for="rememberMe" id="rememberMeLabel">記住我</label>
+        </div>
+        <button class="btn primary-btn" onclick="loginUser()">登入</button>
+        <p class="auth-switch">還沒有帳號？ <a href="#" onclick="showRegisterForm()">立即註冊</a></p>
+        <p class="auth-switch"><a href="#" onclick="showResetPasswordForm()">忘記密碼？</a></p>
+        <div id="loginError" class="error-message"></div>
+      </div>
+      
+      <!-- 註冊表單 -->
+      <div id="registerForm" class="auth-form" style="display:none;">
+        <h3>註冊新帳號</h3>
+        <div class="form-group">
+          <label for="registerName">姓名</label>
+          <input type="text" id="registerName" placeholder="請輸入您的姓名" required>
+        </div>
+        <div class="form-group">
+          <label for="registerEmail">電子郵件</label>
+          <input type="email" id="registerEmail" placeholder="your@email.com" required>
+        </div>
+        <div class="form-group">
+          <label for="registerPhone">電話</label>
+          <input type="tel" id="registerPhone" placeholder="請輸入您的電話號碼">
+        </div>
+        <div class="form-group">
+          <label for="registerTeam">所屬團隊/組織</label>
+          <input type="text" id="registerTeam" placeholder="請輸入您的團隊或組織名稱">
+        </div>
+        <div class="form-group">
+          <label for="registerPassword">密碼</label>
+          <input type="password" id="registerPassword" placeholder="請輸入至少8位字符" required>
+        </div>
+        <div class="form-group">
+          <label for="registerConfirmPassword">確認密碼</label>
+          <input type="password" id="registerConfirmPassword" placeholder="再次輸入密碼" required>
+        </div>
+        <button class="btn primary-btn" onclick="registerUser()">註冊</button>
+        <p class="auth-switch">已有帳號？ <a href="#" onclick="showLoginForm()">返回登入</a></p>
+        <div id="registerError" class="error-message"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 主應用區 (初始應設為隱藏) -->
+  <div id="mainAppContainer" style="display:none;">
+    <!-- 頁首 -->
+    <header>
+      <div class="header-content">
+        <img src="images/EAF_logo.png" alt="EAF Logo" class="logo">
+        <div class="user-info">
+          <span id="currentUserName"></span>
+          <button class="btn small-btn" onclick="logoutUser()" id="logoutButton">登出</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- 分頁容器 -->
+    <div id="pageContainer">
+      <!-- 首頁：全局設定 -->
+      <section id="homePage" class="page active">
+        <div class="setup-card">
+          <h2>比賽設定</h2>
+          <p class="setup-subtitle">配置您的比賽設定</p>
+          
+          <div class="setup-form">
+            <div class="form-group">
+              <label for="globalTournamentName">比賽名稱</label>
+              <input type="text" id="globalTournamentName" placeholder="Fancy Competition">
+            </div>
+            
+            <div class="form-group">
+              <label for="globalPoolTotal">小組數量</label>
+              <input type="number" id="globalPoolTotal" value="2" min="1" max="10">
+            </div>
+            
+            <div class="form-group">
+              <label>晉級選擇方式</label>
+              <div class="tab-selector">
+                <div class="tab-option active" data-value="fixed" onclick="selectQualMethod(this, 'fixed')">按數量</div>
+                <div class="tab-option" data-value="ratio" onclick="selectQualMethod(this, 'ratio')">按百分比</div>
+              </div>
+              <input type="hidden" id="globalQualType" value="fixed">
+            </div>
+            
+            <div class="form-group">
+              <label for="globalQualValue">每組晉級人數</label>
+              <input type="number" id="globalQualValue" value="8" min="1">
+              <p class="help-text">從每組晉級到淘汰賽階段的選手數量</p>
+            </div>
+            
+            <button class="btn primary-btn" onclick="startPoolTournament()">開始比賽</button>
+          </div>
+        </div>
+      </section>
+      
+      <!-- Pool 賽頁面 -->
+      <section id="poolPage" class="page" style="display:none;">
+        <h2 id="poolEventName"></h2>
+        <!-- Pool 分頁按鈕 -->
+        <div id="poolTabs" class="pool-tabs"></div>
+        <!-- 各 Pool 內容 -->
+        <div id="poolContents"></div>
+        
+        <!-- 選手輸入模式區域 -->
+        <div id="playerInputMode" style="display:none;">
+          <div class="input-mode-header">
+            <h3>選手名稱輸入</h3>
+            <p>請依序輸入所有選手姓名</p>
+          </div>
+          <button class="btn primary-btn" id="finishInputBtn" onclick="finishPlayerInput()">完成輸入</button>
+        </div>
+        
+        <!-- 比賽進度顯示區域 -->
+        <div id="matchScheduleArea" style="display:none;">
+          <!-- 比賽進度和當前比賽 -->
+          <div id="matchSchedule" class="match-schedule-container"></div>
+          <!-- 比賽完成訊息 -->
+          <div id="matchCompletion" class="match-completion-container"></div>
+        </div>
+        
+        <!-- 完成比賽按鈕，在所有比賽結束後才顯示 -->
+        <button id="calculateResultsBtn" class="btn" onclick="calculatePoolResults()" style="display:none;">計算排名及成績</button>
+        
+        <!-- 直接下載小組賽成績按鈕 -->
+        <button id="directDownloadBtn" class="btn secondary-btn" onclick="downloadPoolResults()" style="display:none;">
+          <i class="fas fa-download"></i> 下載小組賽成績
+        </button>
+      </section>
+
+      <!-- Overall Seeding & Results 頁面 -->
+      <section id="seedingPage" class="page" style="display:none;">
+        <div id="seedingResultsSection">
+          <h2>整體排名及成績</h2>
+          <!-- 正常選手表格 -->
+          <div id="normalResultsContainer"></div>
+          <!-- 被 DQ 選手表格 -->
+          <div id="dqResultsContainer"></div>
+          <!-- 按鈕容器 - 用於放置下載按鈕 -->
+          <div id="poolResultsButtonContainer"></div>
+          <!-- 按鈕容器 - 用於放置進入淘汰賽按鈕 -->
+          <div id="enterKnockoutButtonContainer"></div>
+        </div>
+      </section>
+
+      <!-- 淘汰賽對陣表 頁面 -->
+      <section id="knockoutPage" class="page" style="display:none;">
+        <div id="tablesSection">
+          <h2>淘汰賽對陣表</h2>
+          <div id="bracketContainer"></div>
+        </div>
+      </section>
+
+      <!-- Final Results (最終成績) 頁面 -->
+      <section id="finalResultsPage" class="page" style="display:none;">
+        <div id="finalResultsSection">
+          <div id="finalTitle"></div>
+          <div id="finalResultsContainer"></div>
+          <button class="btn download-btn" onclick="downloadFinalResults()">
+            <i class="fas fa-download"></i> 下載最終成績表
+          </button>
+          <div class="final-btns">
+            <button class="btn" onclick="restartNewMatch()" id="restartNewBtn">重新開始新比賽</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 單挑比賽 (對決) 頁面 -->
+      <section id="matchPage" class="page" style="display:none;">
+        <div id="matchSection">
+          <h2>對決</h2>
+          <div class="match-info">
+            <div class="match-players">
+              <div class="match-player">
+                <h3 id="matchPlayer1Name">選手1</h3>
+                <!-- 將比分顯示改為 input 欄位，可直接手動輸入 -->
+                <input type="number" id="matchScore1" class="score-display" value="0">
+                <div class="score-controls">
+                  <button class="btn" onclick="updateMatchScore('matchScore1', 1)">+1</button>
+                  <button class="btn btn-danger" onclick="updateMatchScore('matchScore1', -1)">-1</button>
+                </div>
+              </div>
+              <div class="match-player">
+                <h3 id="matchPlayer2Name">選手2</h3>
+                <input type="number" id="matchScore2" class="score-display" value="0">
+                <div class="score-controls">
+                  <button class="btn" onclick="updateMatchScore('matchScore2', 1)">+1</button>
+                  <button class="btn btn-danger" onclick="updateMatchScore('matchScore2', -1)">-1</button>
+                </div>
+              </div>
+            </div>
+            <div class="custom-time">
+              <label>比賽時間:</label>
+              <select id="matchTimeSelect" onchange="changeMatchTime(this)">
+                <option value="60">01:00</option>
+                <option value="180" selected>03:00</option>
+                <option value="300">05:00</option>
+              </select>
+            </div>
+            <div class="match-timer">
+              <h3>比賽倒計時 (MM:SS)</h3>
+              <div id="timerDisplay" class="score-display">03:00</div>
+              <div class="timer-controls">
+                <button class="btn" onclick="startTimer()">開始</button>
+                <button class="btn btn-danger" onclick="stopTimer()">暫停</button>
+                <button class="btn" onclick="resetTimer()">重設</button>
+              </div>
+            </div>
+            <!-- 裁判發牌區 -->
+            <div class="card-controls">
+              <button class="btn" onclick="resetCardSelection()">重置發牌</button>
+            </div>
+            <div class="card-section">
+              <div class="card-group left-group">
+                <h3>左方發牌</h3>
+                <div class="card-buttons">
+                  <button class="card-btn none" onclick="selectCard('left','none')">無牌</button>
+                  <button class="card-btn yellow" onclick="selectCard('left','yellow')">黃牌</button>
+                  <button class="card-btn red" onclick="selectCard('left','red')">紅牌</button>
+                  <button class="card-btn black" onclick="selectCard('left','black')">黑牌</button>
+                </div>
+                <div class="card-display" id="cardDisplayLeft">目前牌：無牌</div>
+              </div>
+              <div class="card-group right-group">
+                <h3>右方發牌</h3>
+                <div class="card-buttons">
+                  <button class="card-btn none" onclick="selectCard('right','none')">無牌</button>
+                  <button class="card-btn yellow" onclick="selectCard('right','yellow')">黃牌</button>
+                  <button class="card-btn red" onclick="selectCard('right','red')">紅牌</button>
+                  <button class="card-btn black" onclick="selectCard('right','black')">黑牌</button>
+                </div>
+                <div class="card-display" id="cardDisplayRight">目前牌：無牌</div>
+              </div>
+            </div>
+            <!-- Tie-Break 按鈕（預設隱藏） -->
+            <div id="tieBreakStartContainer" style="display:none; text-align:center; margin-top:10px;">
+              <button class="btn" onclick="startTieBreakTimer()">開始 Tie-Break</button>
+            </div>
+          </div>
+          <div class="match-submit">
+            <button class="btn" onclick="finishMatch()">送出比賽結果</button>
+            <button class="btn" id="backButton" onclick="backToPool()">返回 Pool 賽</button>
+          </div>
+        </div>
+      </section>
+      
+      <!-- 設定頁面 -->
+      <section id="settingsPage" class="page" style="display:none;">
+        <div class="setup-card">
+          <h2 id="settingsTitle">Settings</h2>
+          
+          <div class="settings-section">
+            <h3>Language / 語言</h3>
+            <div class="language-selector">
+              <button class="lang-btn" onclick="changeLanguage('en')">English</button>
+              <button class="lang-btn active" onclick="changeLanguage('zh-TW')">繁體中文</button>
+              <button class="lang-btn" onclick="changeLanguage('zh-CN')">简体中文</button>
+            </div>
+          </div>
+          
+          <div class="settings-section">
+            <h3 id="aboutTitle">About</h3>
+            <div class="version-info">
+              <p>Elite Academy of Fencing</p>
+              <p>Tournament Management System</p>
+              <p id="versionText">Version 2.1.0</p>
+              <p class="copyright" id="copyrightText">© 2025 EAF. All rights reserved.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 用戶資料頁面 -->
+      <section id="profilePage" class="page" style="display:none;">
+        <div class="setup-card">
+          <h2>個人資料</h2>
+          
+          <div class="profile-form">
+            <div class="form-group">
+              <label for="profileName">姓名</label>
+              <input type="text" id="profileName" placeholder="請輸入您的姓名">
+            </div>
+            
+            <div class="form-group">
+              <label for="profileEmail">電子郵件</label>
+              <input type="email" id="profileEmail" readonly>
+              <p class="help-text">電子郵件地址不可更改</p>
+            </div>
+            
+            <div class="form-group">
+              <label for="profilePhone">電話</label>
+              <input type="tel" id="profilePhone" placeholder="請輸入您的電話號碼">
+            </div>
+            
+            <div class="form-group">
+              <label for="profileTeam">所屬團隊/組織</label>
+              <input type="text" id="profileTeam" placeholder="請輸入您的團隊或組織名稱">
+            </div>
+            
+            <div class="form-group">
+              <label for="profileBio">個人簡介</label>
+              <textarea id="profileBio" rows="3" placeholder="請簡單介紹您自己"></textarea>
+            </div>
+            
+            <div class="profile-avatar">
+              <label>個人頭像</label>
+              <div class="avatar-container">
+                <img id="avatarPreview" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIiBmaWxsPSIjYjcxYzFjIj48Y2lyY2xlIGN4PSIxMDAiIGN5PSI4MCIgcj0iNTAiLz48cGF0aCBkPSJNMTAwIDE1MGMtNDYuOSAwLTg1IDMzLjEtODUgNzQuNWgxNzBjMC00MS40LTM4LjEtNzQuNS04NS03NC41eiIvPjwvc3ZnPg==" alt="用戶頭像">
+                <button class="btn" id="changeAvatarBtn" onclick="document.getElementById('avatarUpload').click()">更換頭像</button>
+                <input type="file" id="avatarUpload" accept="image/*" style="display:none;" onchange="previewAvatar(this)">
+              </div>
+            </div>
+            
+            <button class="btn primary-btn" onclick="updateUserProfile()">保存資料</button>
+            <div id="profileUpdateMessage" class="update-message" style="display:none;"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- 關閉比賽頁按鈕 -->
+    <div id="closeMatchButton" style="display:none;">
+      <button class="btn" onclick="closeMatch()">關閉比賽</button>
+    </div>
+    
+    <!-- 底部導航欄 -->
+    <nav id="bottomNav">
+      <div class="nav-item active" onclick="switchPage('homePage')">
+        <i class="fas fa-home"></i>
+        <span>首頁</span>
+      </div>
+      <div class="nav-item" onclick="switchPage('poolPage')">
+        <i class="fas fa-users"></i>
+        <span>小組賽</span>
+      </div>
+      <div class="nav-item" onclick="switchPage('seedingPage')">
+        <i class="fas fa-sort-numeric-up"></i>
+        <span>排名</span>
+      </div>
+      <div class="nav-item" onclick="switchPage('knockoutPage')">
+        <i class="fas fa-trophy"></i>
+        <span>淘汰賽</span>
+      </div>
+      <div class="nav-item" onclick="switchPage('finalResultsPage')">
+        <i class="fas fa-medal"></i>
+        <span>結果</span>
+      </div>
+      <div class="nav-item" onclick="switchPage('profilePage')">
+        <i class="fas fa-user"></i>
+        <span>個人資料</span>
+      </div>
+      <div class="nav-item" onclick="openSettingsPage()">
+        <i class="fas fa-sliders-h"></i>
+        <span>設定</span>
+      </div>
+    </nav>
+  </div>
+
+  <!-- JavaScript -->
+  <script src="auth.js"></script>
+  <script src="script.js"></script>
+  <script>
+    function selectQualMethod(elem, type) {
+      document.querySelectorAll('.tab-option').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      elem.classList.add('active');
+      document.getElementById('globalQualType').value = type;
+    }
+    
+    // 全局函數，方便處理進入比賽按鈕
+    window.handleEnterMatch = function(roundIndex, matchIndex) {
+      console.log("Enter match button clicked:", roundIndex, matchIndex);
+      try {
+        // 直接實現核心功能，避免依賴其他的函數
+        if (!window.knockoutBracket || !window.knockoutBracket.rounds) {
+          console.error("No knockout bracket data");
+          alert("比賽數據不存在");
+          return;
+        }
+        
+        let round = window.knockoutBracket.rounds[roundIndex];
+        if (!round) {
+          console.error("Round not found");
+          return;
+        }
+        
+        let match = round[matchIndex];
+        if (!match) {
+          console.error("Match not found");
+          return;
+        }
+        
+        // 檢查是否有選手為BYE
+        if ((match.player1 && match.player1.name === "BYE") || 
+            (match.player2 && match.player2.name === "BYE")) {
+          let winner = (match.player1 && match.player1.name === "BYE") ? match.player2 : match.player1;
+          alert("輪空！" + winner.name + " 自動晉級！");
+          match.winner = winner;
+          
+          if (typeof window.displayKnockoutBracket === 'function') {
+            window.displayKnockoutBracket();
+          }
+          return;
+        }
+        
+        // 重置比賽數據
+        window.currentMatchData = { 
+          knockoutRound: roundIndex, 
+          matchIndex: matchIndex, 
+          player1: match.player1, 
+          player2: match.player2 
+        };
+        
+        // 更新UI
+        document.getElementById("matchPlayer1Name").textContent = match.player1.name;
+        document.getElementById("matchPlayer2Name").textContent = match.player2.name;
+        document.getElementById("matchScore1").value = "0";
+        document.getElementById("matchScore2").value = "0";
+        
+        // 重置發牌
+        window.leftCard = "none";
+        window.rightCard = "none";
+        document.getElementById("cardDisplayLeft").textContent = "目前牌：無牌";
+        document.getElementById("cardDisplayRight").textContent = "目前牌：無牌";
+        
+        // 設置返回按鈕
+        document.getElementById("backButton").textContent = "返回淘汰賽";
+        
+        // 切換頁面
+        document.querySelectorAll(".page").forEach(page => {
+          page.style.display = "none";
+        });
+        document.getElementById("matchPage").style.display = "block";
+      } catch (e) {
+        console.error("Error in handleEnterMatch:", e);
+        alert("處理比賽時發生錯誤: " + e.message);
+      }
+    }
+  </script>
+</body>
+</html>
